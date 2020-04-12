@@ -1,2 +1,2 @@
-# learnings
-docs
+# RabbitMQ 
+Asynchronous messaging system
