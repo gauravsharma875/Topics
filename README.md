@@ -37,8 +37,8 @@ The message is an essential element for any kind of software. As components inte
 Mainly message has to be loosely coupled. 
 
 ``` Let's look at an example
-- E-commerce sites on BLACK Friday with millions of customers orders
-- Telecom operator with million of customer messages
+E-commerce sites on BLACK Friday with millions of customers orders
+Telecom operator with million of customer messages
 To carry out the above task, there is a high risk of the system may collapse because of the load!
 
 Instead of carrying out the operation at once, we need to queue the request and process it one by one.
@@ -110,11 +110,10 @@ Use cases:
 - Want things to work on popular OS and laguages? `no problem`
 
 
-## Meet RabbitMQ!
+## Meet RabbitMQ! 
 
- 
- 
- 
+
+ file:///home/gaurav/Pictures/rabbitmq-beginners-updated.png
  
  
  
