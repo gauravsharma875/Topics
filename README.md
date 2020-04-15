@@ -28,6 +28,7 @@ In the software world, provides a mechanism of `loosely-coupled` integration of 
 ``` If you ever used SOAP protocol then you are familiar with the message, header and body concepts with a different form. SOAP messages exchange and shared through the envelope of share messages to another system or application.
 Softwares system receiving these envelopes/message will take certain action based on the content of the message. This is how the soap protocol is working and use till date.
 ```
+
 The message is an essential element for any kind of software. As components interact with each other with multiple ways and forms
 * Method calls
 * RPC
@@ -132,14 +133,32 @@ Queue wil get the messages from binding
 and exchanges are binding to queue via binding
 
 
-Queues, Topics, Exchanges and Bindings
+## Queues, Topics, Exchanges and Bindings
 
 
 ![](rabbitmq.png)
 
 
+# Exchange
 
+Actual AMQP elements where messages are sent at first
+Take a message and routes it into one or more queues
+Routing algorithm decides where to send messages from exchange
+Bindings are simply used to bind exchanges to queues for message delivery
 
+```Types of exchange:
+Direct Exchange - (Empty String) amd amq.direct - This one is default one
+Fanout Exchange - ampq.fanout - distribute message to all queues
+Topic Exchange - ampq.topic - delivers to the tied queue with specific topic
+Headers Exchange - ampq.match - this is used when you want to exchange 
+                   headers with third party app 
+```
+                   
+# Queues
+
+Foundation elemt in R MQ
+                   
+               
 
 
 
