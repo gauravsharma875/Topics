@@ -112,9 +112,39 @@ Use cases:
 
 ## Meet RabbitMQ! 
 
+Powerful open source message broker and most popluar implementation of `AMQP`!
+Provides a robust and flexible messaging platform designed to interoperate with other 
+messaging systems
+Developed using Erlang programming language
+It support clustering for fault tolerance and scalability- common use when dealing with messages 
+Protocol defines exchanges, queues and bindings 
+Allows multiple connections channels inside a single TCP connection in order to remove the overhead
+of opening a large number of TCP connections to the message broker. (not to think of overhead)
 
- file:///home/gaurav/Pictures/rabbitmq-beginners-updated.png
- 
+## Design Overview:
+
+`publisher -> (mutiple own or default) exchange ---(binding) -> queue -> subscriber`
+
+Explanation 
+Publisher will send message to exchange
+Subsriber will listen to queue for broker/rabbitmq
+Queue wil get the messages from binding
+and exchanges are binding to queue via binding
+
+
+Queues, Topics, Exchanges and Bindings
+
+
+
+
+
+
+
+
+
+
+
+
  
  
  
