@@ -53,7 +53,7 @@ Protocols are designed with keeping messaging in mind. Three most widely used pr
 - STOMP
 - MQTT
 - AMQP
-```
+
 ### Simple text-oriented Messaging Protocol (STOMP)
 * Provides an interoperable format so that STOMP clients can communicate with any STOMP message broker to provide easy and widespread messaging interoperability among many languages, platforms and brokers.
 * Its similar to HTTP like design
@@ -75,7 +75,7 @@ Protocols are designed with keeping messaging in mind. Three most widely used pr
 * Provides a wide range of features related to messaging including reliable queuing, topic-based pub-subs messaging, flexible, transactions and security.
 * JP Morgan process billions of messages a day with AMQP!
 
-```
+
 
  ## A closer look at AMQP
  
@@ -135,7 +135,7 @@ and exchanges are binding to queue via binding
 Queues, Topics, Exchanges and Bindings
 
 
-
+![](rabbitmq.png)
 
 
 
