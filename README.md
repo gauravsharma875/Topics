@@ -178,6 +178,29 @@ Optional parameters for message exchange
 You can send or receive message with any topic information
 Topic exchanges are defined using topics for message delivery
 
+# Bindings
+
+Rules that exchanges use to route messages to queues
+Many have an optional `routing key attribute` used by some exchanges types
+So the routing key acts like a filter 
+Binding Analogy:
+ * Queues are like destination in delhi city
+ * Exchanges are like Indra gandhi airport in delhi city
+ * Bindings are th route from Indra gandhi airport to your destination. There can be 
+   zero or many ways to reach it
+If message cannot be routed to any queue(there are no bindings for the exchange it 
+was published to) it is either dropped or returned to the publisher, depending on 
+message attributes the publisher has set.
+
+
+# RabbitMQ vs other: Comparison
+
+![](diff1.png)
+
+Kafka vs RabbitMQ
+![](diff2.png)
+
+
 
 
 
