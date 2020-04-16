@@ -156,9 +156,28 @@ Headers Exchange - ampq.match - this is used when you want to exchange
                    
 # Queues
 
-Foundation elemt in R MQ
-                   
+Foundation or core element in any MQ protocol especially for RabbitMQ
+Messages are required to queues from exchanges
+Queues are the final destinations in RabbitMQ before being received by subscribers
+Routing algorithms depends on the exchange type and rules called `Bindings`
+`Bindings` are simply used to `bind` `exchanges to queues` for `message delivery`
+
+```Properties of Queue:
+Name: The name of the queue
+Durable: Either presist the queue to the disk or not - back up in case of failure
+Exclusive: Delete the queue if not used anymore
+Auto-Delete: Delete the queue when customer unsubscribes 
+```                
                
+# Topics
+
+Topics are simply the "subject" part of the messages
+Defined as routing_key for message grouping 
+Special formatting for better use : "app.logs.error"
+Optional parameters for message exchange 
+You can send or receive message with any topic information
+Topic exchanges are defined using topics for message delivery
+
 
 
 
