@@ -195,11 +195,11 @@ message attributes the publisher has set.
 
 # RabbitMQ vs other: Comparison
 
-![](diff1.png)
-
-Kafka vs RabbitMQ
 ![](diff2.png)
 
+Kafka vs RabbitMQ
+
+![](diff1.png)
 
 
 
