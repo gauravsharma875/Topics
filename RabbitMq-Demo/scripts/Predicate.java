@@ -39,16 +39,12 @@ public class Employee {
 
         System.out.println("************ Equals method ***********");
 
-//        Prdicate has some default methods
-//                and
-//                or
-//                negate
-//                one static method ->  isEqual(t t)
+//        Prdicate has some default methods and
+//        or negate one static method ->  isEqual(t t)
 
         Predicate<String> p3 = Predicate.isEqual("Astronaut");
         String designation_ = employees.get(2).designation;
         System.out.println(p3.test(designation_));
-
 
 
         System.out.println("************ Equals method Object ***********");

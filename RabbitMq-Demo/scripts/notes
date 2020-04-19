@@ -1,0 +1,5 @@
+# Commands
+
+intellij-idea-community
+sudo update-alternatives --config java
+sudo netstat -lpn |grep :8080
