@@ -136,7 +136,7 @@ and exchanges are binding to queue via binding
 ## Queues, Topics, Exchanges and Bindings
 
 
-![](rabbitmq.png)
+![](images/rabbitmq.png)
 
 
 # Exchange
@@ -195,11 +195,11 @@ message attributes the publisher has set.
 
 # RabbitMQ vs other: Comparison
 
-![](diff2.png)
+![](images/diff2.png)
 
 Kafka vs RabbitMQ
 
-![](diff1.png)
+![](images/diff1.png)
 
 
 
