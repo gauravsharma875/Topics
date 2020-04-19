@@ -12,7 +12,7 @@
 - Getting started with rabbitmq implementation
 - How to use RabbitTemplate for sending simple and complex messages
 - Configure Queues, Exchanges, Bindings from code
-- `Excercise` Realize an asynchronous scenario with two different applications
+- **Excercise** Realize an asynchronous scenario with two different applications
 ``` 
 
 ### Installations
