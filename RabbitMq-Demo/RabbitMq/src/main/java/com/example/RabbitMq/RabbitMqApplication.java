@@ -21,10 +21,13 @@ public class RabbitMqApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        SimpleMessage simpleMessage=new SimpleMessage();
+        SimpleMessage simpleMessage = new SimpleMessage();
         simpleMessage.setName("firstMessage");
-        simpleMessage.setDescription("description");
+        simpleMessage.setDescription("sadfsf");
 
-        rabbitTemplate.convertAndSend("TestExchange", "testRouting", simpleMessage);
+        /*Asynchronous Communication scenario using two different applications
+         "MyExchange" is different application calling from here*/
+
+        rabbitTemplate.convertAndSend("MyExchange", "topic", simpleMessage);
     }
 }
