@@ -1,8 +1,6 @@
 package com.example.RabbitMq.message;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.io.Serializable;
 

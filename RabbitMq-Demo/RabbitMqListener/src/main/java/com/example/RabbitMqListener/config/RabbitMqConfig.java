@@ -31,18 +31,18 @@ public class RabbitMqConfig {
         return BindingBuilder.bind(myQueue()).to(myExchange()).with("topic").noargs();
     }
 
-    @Bean
+    /*@Bean
     ConnectionFactory connectionFactory() {
         CachingConnectionFactory cachingConnectionFactory = new CachingConnectionFactory("localhost");
         cachingConnectionFactory.setUsername("guest");
         cachingConnectionFactory.setPassword("guest");
         return cachingConnectionFactory;
     }
-
+*/
     @Bean
-    MessageListenerContainer messageListenerContainer() {
+    MessageListenerContainer messageListenerContainer(final ConnectionFactory connectionFactory ) {
         SimpleMessageListenerContainer simpleMessageListerneContainer = new SimpleMessageListenerContainer();
-        simpleMessageListerneContainer.setConnectionFactory(connectionFactory());
+        simpleMessageListerneContainer.setConnectionFactory(connectionFactory);
         simpleMessageListerneContainer.setQueues(myQueue());
         simpleMessageListerneContainer.setMessageListener(new RabbitMqMessageListener());
         return simpleMessageListerneContainer;
