@@ -30,3 +30,34 @@ out/
 
 ### VS Code ###
 .vscode/
+
+
+
+*.class
+*.iml
+*.ipr
+*.iws
+.idea
+/build/
+service/build/
+/bin/
+/gradlew
+/gradlew.bat
+/gradle/
+/.classpath
+/.project
+/.settings
+/out
+/.shelf
+/service/out
+.gradle
+.settings
+bin/
+.classpath
+.project
+client/build/
+/client/out
+model/build/
+/model/out
+.DS_Store
+
