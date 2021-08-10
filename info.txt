@@ -2,3 +2,8 @@ Some principals -
 Use Redis as a cache and if not in the cache call the backend system to repopulate the cache, 
 Use a DB for Data Storage (DynamoDB over Oracle) that is transient or needs longer persistence, 
 use Queues for things that can repeat (eg store and forward)
+
+
+Refferal 
+
+https://www.linkedin.com/in/vikrant-kandgaonkar-41753088/
