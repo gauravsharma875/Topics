@@ -1,0 +1,5 @@
+@Value("#{'${sipd.dyno.blocked.plumbing.fault.ids}'.split(',')}")
+  private List<String> blockedPlumbingFaultIds;
+  
+  
+  
