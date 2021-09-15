@@ -7,3 +7,68 @@ use Queues for things that can repeat (eg store and forward)
 Refferal 
 
 https://www.linkedin.com/in/vikrant-kandgaonkar-41753088/
+
+
+@Data
+public class Client implements ClientDetails {
+
+  private static final long serialVersionUID = 8457554027154069389L;
+
+  @JsonProperty("id")
+  private String clientId;
+
+  @JsonIgnore private String clientSecret;
+
+  @JsonProperty("resources")
+  private Set<String> resourceIds;
+
+  @JsonProperty("scopes")
+  private Set<String> scope;
+
+  @JsonProperty("authorizedGrants")
+  private Set<String> authorizedGrantTypes;
+
+  @JsonProperty("redirects")
+  private Set<String> registeredRedirectUri;
+
+  @JsonProperty("grantedAuthorities")
+  private Set<GrantedAuthority> authorities;
+
+  @JsonProperty("accessTokenValidity")
+  private Integer accessTokenValiditySeconds;
+
+  @JsonProperty("refreshTokenValidity")
+  private Integer refreshTokenValiditySeconds;
+
+  private Map<String, Object> additionalInformation;
+
+  @JsonProperty("autoApprovedScopes")
+  private Set<String> autoApprove;
+
+  @JsonProperty("authenticationMethod")
+  private Integer authenticationMethod;
+
+  @JsonProperty("identityZone")
+  private IdentityZone identityZone;
+
+  @JsonIgnore
+  @Override
+  public boolean isSecretRequired() {
+    return StringUtils.isNotEmpty(clientSecret);
+  }
+
+  @JsonIgnore
+  @Override
+  public boolean isScoped() {
+    return !scope.isEmpty();
+  }
+
+  @Override
+  public boolean isAutoApprove(String scope) {
+    return autoApprove.contains(scope) || autoApprove.contains(scopeWithoutResource(scope));
+  }
+
+  private String scopeWithoutResource(String scope) {
+    return scope.contains(":") ? scope.substring(scope.lastIndexOf(':') + 1) : scope;
+  }
+}
