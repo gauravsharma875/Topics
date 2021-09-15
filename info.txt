@@ -9,66 +9,164 @@ Refferal
 https://www.linkedin.com/in/vikrant-kandgaonkar-41753088/
 
 
-@Data
-public class Client implements ClientDetails {
+package uk.co.britishgas.uaa.oauth2.token;
 
-  private static final long serialVersionUID = 8457554027154069389L;
+import static org.springframework.security.oauth2.provider.token.AccessTokenConverter.*;
+import static uk.co.britishgas.uaa.converters.OnlineJwtUserAuthenticationConverter.AUTH_CODE;
 
-  @JsonProperty("id")
-  private String clientId;
+import java.util.Map;
+import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.jwt.Jwt;
+import org.springframework.security.jwt.JwtHelper;
+import org.springframework.security.oauth2.common.ExpiringOAuth2RefreshToken;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.common.OAuth2RefreshToken;
+import org.springframework.security.oauth2.common.exceptions.InvalidGrantException;
+import org.springframework.security.oauth2.common.util.JsonParser;
+import org.springframework.security.oauth2.common.util.JsonParserFactory;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+import org.springframework.util.Assert;
+import uk.co.britishgas.uaa.models.Client;
+import uk.co.britishgas.uaa.persistence.entity.OamUser;
+import uk.co.britishgas.uaa.repository.OamUserRepository;
+import uk.co.britishgas.uaa.repository.redis.JwtTokenRepository;
+import uk.co.britishgas.uaa.security.TokenGenerator;
+import uk.co.britishgas.uaa.service.ClientService;
 
-  @JsonIgnore private String clientSecret;
+/**
+ * Custom JWT token store - To blacklist tokens and check for blacklisted tokens.
+ *
+ * @author Karthik Battula
+ */
+@Slf4j
+public class OnlineJwtTokenStore extends JwtTokenStore {
 
-  @JsonProperty("resources")
-  private Set<String> resourceIds;
+  @Autowired private JwtTokenRepository tokenRepository;
+  @Autowired private ClientService clientService;
+  @Autowired private OamUserRepository oamUserRepository;
+  @Autowired private TokenGenerator tokenGenerator;
 
-  @JsonProperty("scopes")
-  private Set<String> scope;
+  private JsonParser objectMapper = JsonParserFactory.create();
 
-  @JsonProperty("authorizedGrants")
-  private Set<String> authorizedGrantTypes;
-
-  @JsonProperty("redirects")
-  private Set<String> registeredRedirectUri;
-
-  @JsonProperty("grantedAuthorities")
-  private Set<GrantedAuthority> authorities;
-
-  @JsonProperty("accessTokenValidity")
-  private Integer accessTokenValiditySeconds;
-
-  @JsonProperty("refreshTokenValidity")
-  private Integer refreshTokenValiditySeconds;
-
-  private Map<String, Object> additionalInformation;
-
-  @JsonProperty("autoApprovedScopes")
-  private Set<String> autoApprove;
-
-  @JsonProperty("authenticationMethod")
-  private Integer authenticationMethod;
-
-  @JsonProperty("identityZone")
-  private IdentityZone identityZone;
-
-  @JsonIgnore
-  @Override
-  public boolean isSecretRequired() {
-    return StringUtils.isNotEmpty(clientSecret);
-  }
-
-  @JsonIgnore
-  @Override
-  public boolean isScoped() {
-    return !scope.isEmpty();
+  public OnlineJwtTokenStore(JwtAccessTokenConverter jwtTokenEnhancer) {
+    super(jwtTokenEnhancer);
   }
 
   @Override
-  public boolean isAutoApprove(String scope) {
-    return autoApprove.contains(scope) || autoApprove.contains(scopeWithoutResource(scope));
+  public OAuth2RefreshToken readRefreshToken(String tokenValue) {
+    OAuth2RefreshToken refreshToken = super.readRefreshToken(tokenValue);
+    Map<String, Object> claims = getClaims(refreshToken.getValue());
+    if (isTokenBlacklisted((String) claims.get(AUTH_CODE))
+        || isTokenBlacklisted((String) claims.get(ATI))) {
+      throw new InvalidGrantException("error.client.refresh_token.revoked");
+    }
+    return refreshToken;
   }
 
-  private String scopeWithoutResource(String scope) {
-    return scope.contains(":") ? scope.substring(scope.lastIndexOf(':') + 1) : scope;
+  @Override
+  public OAuth2AccessToken readAccessToken(String tokenValue) {
+    OAuth2AccessToken accessToken = super.readAccessToken(tokenValue);
+    Map<String, Object> claims = getClaims(accessToken.getValue());
+    if (isTokenBlacklisted((String) claims.get(AUTH_CODE))
+        || isTokenBlacklisted((String) claims.get(JTI))) {
+      throw new InvalidGrantException("error.client.access_token.revoked");
+    }
+    return accessToken;
+  }
+
+  @Override
+  public void removeRefreshToken(OAuth2RefreshToken token) {
+    Assert.isInstanceOf(ExpiringOAuth2RefreshToken.class, token);
+
+    ExpiringOAuth2RefreshToken refreshToken = (ExpiringOAuth2RefreshToken) token;
+    if (!isRefreshTokenExpired(refreshToken)) {
+      int expiryInSeconds =
+          (int) (refreshToken.getExpiration().getTime() - System.currentTimeMillis() / 1000L);
+      Map<String, Object> claims = getClaims(token.getValue());
+      String tokenId = (String) claims.get(ATI);
+      blackListToken(tokenId, expiryInSeconds);
+      log.debug("Refresh token is blacklisted: {}", tokenId);
+    }
+  }
+
+  @Override
+  public void removeAccessToken(OAuth2AccessToken token) {
+    if (!token.isExpired()) {
+      Map<String, Object> claims = getClaims(token.getValue());
+      Client client = clientService.fetchClient((String) claims.get(CLIENT_ID));
+      String tokenId = (String) claims.get(JTI);
+      // setting the expiry time to refresh token validity, because access token expires early, but
+      // related refresh token with more expiry time is still out there.
+      blackListToken(tokenId, client.getRefreshTokenValiditySeconds());
+      log.debug("Access token is blacklisted, tokenId: {}", tokenId);
+    }
+  }
+
+  /**
+   * Helper method to decode claims from JWT - token's signature is already verified on Read
+   *
+   * @param value
+   * @return claims
+   */
+  private Map<String, Object> getClaims(String value) {
+    Jwt jwt = JwtHelper.decode(value);
+    return objectMapper.parseMap(jwt.getClaims());
+  }
+
+  public void removeAccessToken(String token) {
+    OAuth2AccessToken accessToken = readAccessToken(token);
+    removeAccessToken(accessToken);
+  }
+
+  /**
+   * Blacklists the tokens based on AuthCode generated for the user. And updates the DB with new
+   * AuthCode
+   *
+   * @param clientId
+   * @param email
+   */
+  public void removeAccessTokenForUser(String clientId, String email) {
+    OamUser existingOamUser = oamUserRepository.findByEmailAddress(email);
+    if (Optional.ofNullable(existingOamUser).isPresent()) {
+      Client client = clientService.fetchClient(clientId);
+      blackListToken(
+          existingOamUser.getAuthorizationCode(), client.getRefreshTokenValiditySeconds());
+      updateAuthorizationCode(existingOamUser, email);
+      log.debug("Access tokens are blacklisted for user email: {}", email);
+    } else {
+      log.error("Error revoking tokens for user: {}", email);
+    }
+  }
+
+  private void blackListToken(String tokenValue, int expiryInSeconds) {
+    JwtBlackListToken token = new JwtBlackListToken();
+    token.setTokenId(tokenValue);
+    token.setExpiry(expiryInSeconds);
+    tokenRepository.save(token);
+  }
+
+  private void updateAuthorizationCode(OamUser user, String uniqueToken) {
+    if (Optional.ofNullable(user).isPresent()) {
+      user.setAuthorizationCode(tokenGenerator.generateUniqueToken(uniqueToken));
+      oamUserRepository.save(user);
+      log.debug("Updated user with new Authorization code: {}", uniqueToken);
+    }
+  }
+
+  private boolean isRefreshTokenExpired(ExpiringOAuth2RefreshToken refreshToken) {
+    return refreshToken.getExpiration() == null
+        || System.currentTimeMillis() > refreshToken.getExpiration().getTime();
+  }
+
+  private boolean isTokenBlacklisted(String tokenId) {
+    try {
+      return tokenRepository.existsById(tokenId);
+    } catch (IllegalArgumentException ex) {
+      return false;
+    }
   }
 }
+
