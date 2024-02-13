@@ -170,3 +170,24 @@ public class OnlineJwtTokenStore extends JwtTokenStore {
   }
 }
 
+private EnrichedTransactionType getEnrichedTransactionTypeForTransfer(
+        MessageType messageType, Accounts accounts, Network network, String sourceSystem, Transaction transaction) {
+
+    ProductAccountType productReceiverAccountType = accounts.getReceiverAccountData().getProductAccountType().orElse(ProductAccountType.UNKNOWN);
+
+    ProductAccountType productSenderAccountType = accounts.getSenderAccountData().getProductAccountType().orElse(ProductAccountType.UNKNOWN);
+
+    return switch (productReceiverAccountType, productSenderAccountType, network, sourceSystem) {
+        case (FDIC, FDIC, _, _) -> EnrichedTransactionType.FDIC_TRANSFER;
+        case (_, _, THOR, FDR.name()) -> switch (accounts.getSenderAccountData().getAccount().getDomain(),
+                accounts.getReceiverAccountData().getAccount().getDomain()) {
+            case ("BLOCKCHAIN", "BLOCKCHAIN") -> EnrichedTransactionType.FDR_B2B_TRANSFER;
+            case (_, _) when transactionUtils.isCounterPartyPayout(
+                    Optional.of(transaction).map(Transaction::getTransactionDetail)) ->
+                EnrichedTransactionType.FDR_TCOIN_PAYOUT;
+            case (_, _) -> EnrichedTransactionType.FDR_PAYMENT;
+        };
+        case (_, _, ODR, PartnerSystem.ODR.name()) -> EnrichedTransactionType.TCOIN_TRANSACT;
+        default -> TRANSACTION_TYPE_ENUM_MAP.getOrDefault(messageType, EnrichedTransactionType.UNKNOWN);
+    };
+}
