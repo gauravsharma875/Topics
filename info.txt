@@ -191,3 +191,61 @@ private EnrichedTransactionType getEnrichedTransactionTypeForTransfer(
         default -> TRANSACTION_TYPE_ENUM_MAP.getOrDefault(messageType, EnrichedTransactionType.UNKNOWN);
     };
 }
+
+---
+
+
+private EnrichedTransactionType getEnrichedTransactionTypeForTransfer(
+        MessageType messageType, Accounts accounts, Network network, String sourceSystem, Transaction transaction) {
+
+    ProductAccountType productReceiverAccountType = accounts.getReceiverAccountData()
+            .getProductAccountType().orElse(ProductAccountType.UNKNOWN);
+    ProductAccountType productSenderAccountType = accounts.getSenderAccountData()
+            .getProductAccountType().orElse(ProductAccountType.UNKNOWN);
+
+    return Stream.of(
+            () -> checkFDICTransfer(productReceiverAccountType, productSenderAccountType),
+            () -> checkThorFDRTransfer(accounts, network, sourceSystem, transaction),
+            () -> check0DRODRTransfer(network, sourceSystem)
+    )
+            .flatMap(Supplier::get)
+            .findFirst()
+            .orElse(TRANSACTION_TYPE_ENUM_MAP.getOrDefault(messageType, EnrichedTransactionType.UNKNOWN));
+}
+
+private Stream<EnrichedTransactionType> checkFDICTransfer(
+        ProductAccountType productReceiverAccountType, ProductAccountType productSenderAccountType) {
+    return (FDIC.equals(productReceiverAccountType) || FDIC.equals(productSenderAccountType))
+            ? Stream.of(EnrichedTransactionType.FDIC_TRANSFER)
+            : Stream.empty();
+}
+
+private Stream<EnrichedTransactionType> checkThorFDRTransfer(
+        Accounts accounts, Network network, String sourceSystem, Transaction transaction) {
+    return (network.isThor() && PartnerSystem.FDR.name().equals(sourceSystem))
+            ? Stream.of(
+            checkB2BTransfer(accounts),
+            checkCounterPartyPayout(accounts, transaction),
+            EnrichedTransactionType.FDR_PAYMENT)
+            : Stream.empty();
+}
+
+private EnrichedTransactionType checkB2BTransfer(Accounts accounts) {
+    return ("BLOCKCHAIN".equalsIgnoreCase(accounts.getSenderAccountData().getAccount().getDomain()) &&
+            "BLOCKCHAIN".equalsIgnoreCase(accounts.getReceiverAccountData().getAccount().getDomain()))
+            ? EnrichedTransactionType.FDR_B2B_TRANSFER
+            : null;
+}
+
+private EnrichedTransactionType checkCounterPartyPayout(Accounts accounts, Transaction transaction) {
+    return transactionUtils.isCounterPartyPayout(
+            Optional.of(transaction).map(Transaction::getTransactionDetail))
+            ? EnrichedTransactionType.FDR_TCOIN_PAYOUT
+            : null;
+}
+
+private Stream<EnrichedTransactionType> check0DRODRTransfer(Network network, String sourceSystem) {
+    return (network.is0DR() && PartnerSystem.ODR.name().equals(sourceSystem))
+            ? Stream.of(EnrichedTransactionType.TCOIN_TRANSACT)
+            : Stream.empty();
+}
