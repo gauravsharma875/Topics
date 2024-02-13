@@ -1,12 +1,13 @@
+import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class YourClass {
 
-    private static final Map<MessageType, EnrichedTransactionType> TRANSACTION_TYPE_ENUM_MAP = /* Your map initialization here */ null;
+    private final Map<MessageType, EnrichedTransactionType> TRANSACTION_TYPE_ENUM_MAP = /* Your map initialization here */ null;
 
-    private EnrichedTransactionType getEnrichedTransactionTypeForTransfer(
+    public EnrichedTransactionType getEnrichedTransactionTypeForTransfer(
             MessageType messageType, Accounts accounts, Network network, String sourceSystem, Transaction transaction) {
 
         ProductAccountType productReceiverAccountType = accounts.getReceiverAccountData()
@@ -19,45 +20,54 @@ public class YourClass {
                 checkThorFDRTransfer(accounts, network, sourceSystem, transaction),
                 check0DRODRTransfer(network, sourceSystem)
         )
-                .flatMap(Optional::stream)
+                .flatMap(Function.identity())
                 .findFirst()
                 .orElse(TRANSACTION_TYPE_ENUM_MAP.getOrDefault(messageType, EnrichedTransactionType.UNKNOWN));
     }
 
-    private Optional<EnrichedTransactionType> checkFDICTransfer(
+    private Stream<Optional<EnrichedTransactionType>> checkFDICTransfer(
             ProductAccountType productReceiverAccountType, ProductAccountType productSenderAccountType) {
-        return (FDIC.equals(productReceiverAccountType) || FDIC.equals(productSenderAccountType))
-                ? Optional.of(EnrichedTransactionType.FDIC_TRANSFER)
-                : Optional.empty();
+        return Stream.of(
+                Optional.ofNullable(FDIC.equals(productReceiverAccountType) || FDIC.equals(productSenderAccountType)
+                        ? EnrichedTransactionType.FDIC_TRANSFER
+                        : null)
+        );
     }
 
-    private Stream<EnrichedTransactionType> checkThorFDRTransfer(
+    private Stream<Optional<EnrichedTransactionType>> checkThorFDRTransfer(
             Accounts accounts, Network network, String sourceSystem, Transaction transaction) {
-        return (network.isThor() && PartnerSystem.FDR.name().equals(sourceSystem))
-                ? Stream.of(
+        return Stream.of(
                 checkB2BTransfer(accounts),
                 checkCounterPartyPayout(accounts, transaction),
-                EnrichedTransactionType.FDR_PAYMENT)
-                : Stream.empty();
+                Optional.ofNullable((network.isThor() && PartnerSystem.FDR.name().equals(sourceSystem))
+                        ? EnrichedTransactionType.FDR_PAYMENT
+                        : null)
+        );
     }
 
     private Optional<EnrichedTransactionType> checkB2BTransfer(Accounts accounts) {
-        return ("BLOCKCHAIN".equalsIgnoreCase(accounts.getSenderAccountData().getAccount().getDomain()) &&
-                "BLOCKCHAIN".equalsIgnoreCase(accounts.getReceiverAccountData().getAccount().getDomain()))
-                ? Optional.of(EnrichedTransactionType.FDR_B2B_TRANSFER)
-                : Optional.empty();
+        return Optional.of(
+                Optional.ofNullable(("BLOCKCHAIN".equalsIgnoreCase(accounts.getSenderAccountData().getAccount().getDomain()) &&
+                        "BLOCKCHAIN".equalsIgnoreCase(accounts.getReceiverAccountData().getAccount().getDomain()))
+                        ? EnrichedTransactionType.FDR_B2B_TRANSFER
+                        : null)
+        );
     }
 
     private Optional<EnrichedTransactionType> checkCounterPartyPayout(Accounts accounts, Transaction transaction) {
-        return transactionUtils.isCounterPartyPayout(
-                Optional.of(transaction).map(Transaction::getTransactionDetail))
-                ? Optional.of(EnrichedTransactionType.FDR_TCOIN_PAYOUT)
-                : Optional.empty();
+        return Optional.of(
+                Optional.ofNullable(transactionUtils.isCounterPartyPayout(
+                        Optional.of(transaction).map(Transaction::getTransactionDetail))
+                        ? EnrichedTransactionType.FDR_TCOIN_PAYOUT
+                        : null)
+        );
     }
 
-    private Stream<EnrichedTransactionType> check0DRODRTransfer(Network network, String sourceSystem) {
-        return (network.is0DR() && PartnerSystem.ODR.name().equals(sourceSystem))
-                ? Stream.of(EnrichedTransactionType.TCOIN_TRANSACT)
-                : Stream.empty();
+    private Stream<Optional<EnrichedTransactionType>> check0DRODRTransfer(Network network, String sourceSystem) {
+        return Stream.of(
+                Optional.ofNullable((network.is0DR() && PartnerSystem.ODR.name().equals(sourceSystem))
+                        ? EnrichedTransactionType.TCOIN_TRANSACT
+                        : null)
+        );
     }
 }
